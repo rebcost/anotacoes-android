@@ -1711,3 +1711,438 @@ public boolean onOptionsItemSelected(@NonNull MenuItem item) {
     }
 ```
 
+# Firebase
+
+### Configuracão do Firebase 
+
+**Pelo site Firebase**
+
+- Criar um novo projeto 
+- Ir em adicionar um projeto android
+- preencher os seguintes campos abaixo
+
+<img src="/home/filipe/Documents/android_notebook/anotacoes-android/images/firebase_addapp.png" alt="Adi" style="zoom:70%;" />
+
+***obs: para obter o código sha clicar em grandle > icone do dinossauro > add o comando signingreport***
+
+```
+signingreport
+```
+
+- Fazer o dowload do arquivo *json*
+
+![](/home/filipe/Documents/android_notebook/anotacoes-android/images/arquivo_json.png)
+
+-  Adicionar a dependência do Google no *build.grandle(Module)*
+
+```java
+id 'com.google.gms.google-services'
+```
+
+```java
+plugins {
+    id 'com.android.application'
+    id 'com.google.gms.google-services'
+}
+```
+
+- Adicionar o número da versão da dependência do Goolge no *build.grandle(Project)*
+
+```xml
+id 'com.google.gms.google-services' version '4.3.13' apply false
+```
+
+- Adicionar o firebase BOM no *build.grandle(Project)*
+
+```xml
+implementation platform('com.google.firebase:firebase-bom:31.1.1')
+```
+
+- Adicionar o firebase em tempo real  no *build.grandle(Project)* em *depedencies*
+
+```
+implementation 'com.google.firebase:firebase-database:20.1.0'
+```
+
+- Ao finalizar esses passos o firebase estará configurado para o app.
+
+## Salvando e Atualizar dados
+
+- Para realizar os testes no banco de dados será necessário mudar as regras, para isso mudar os valores de read e write para true. Em seguida clicar em **publicar**.
+
+```sql
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
+```
+
+- Adicionar o código que serve como referência para o banco de dados do firebase
+
+```java
+private DatabaseReference referencia = FirebaseDatabase.getInstance().getReference();
+```
+
+- Para salvar um valor no bando de dados basta adicionar o código
+
+```java
+referencia.child("pontos").setValue("100");
+```
+
+- Para atualizar um valor basta alterar o *setValue*
+
+```java
+referencia.child("pontos").setValue("200");
+```
+
+### Salvando e atualizando dados por meio de objetos java
+
+- Uma outra maneira de salvar e atualizar valores é usando objetos.
+
+- Criar uma nova *Java Class* **Usuarios** com um construtor vazio e adicionar os getters e os setters.
+
+```java
+DatabaseReference NoUsuarios = referencia.child("usuarios");
+
+Usuario usuario = new Usuario();
+usuario.setNome("Filipe");
+usuario.setSobrenome("Costa");
+usuario.setIdade(25);
+
+NoUsuarios.child("001").setValue(usuario);
+```
+
+## Recuperando dados
+
+```JAVA
+DatabaseReference NoUsuarios = referencia.child("usuarios");
+
+NoUsuarios.addValueEventListener(new ValueEventListener() {
+    @Override
+    public void onDataChange(@NonNull DataSnapshot snapshot) {
+    //É chamado sempre que conseguir recuperar os dados
+    Log.i("FIREBASE", snapshot.getValue().toString());
+}
+
+    @Override
+    public void onCancelled(@NonNull DatabaseError error) {
+    // Se por algum motivo essa requisicao for cancelada sera tratada nesse método
+    }
+});
+```
+
+## Autenticacão de usuário
+
+- Entrar no Firebase 
+- Ir em *Authentication*
+- Escolher um dos métodos de autenticacão e clicar em selecionar.
+- Adicionar a opcão de autenticacão no *build.grandle(Project)* 
+
+```java
+implementation 'com.google.firebase:firebase-auth:21.1.0'
+```
+
+- Adicionar um atributo que faz o gerenciamento das autenticacoes dos usuarios
+
+```java
+private FirebaseAuth authUsuarios = FirebaseAuth.getInstance();
+```
+
+- Código de criacão do usuario
+
+```java
+/*Cadastro de usuarios*/
+authUsuarios.createUserWithEmailAndPassword(
+    "filipe@gmail.com",
+    "filipe12345") // Definindo de maneira estática
+    .addOnCompleteListener(MainActivity.this, new OnCompleteListener<AuthResult>() {
+        @Override
+        public void onComplete(@NonNull Task<AuthResult> task) {
+            if (task.isSuccessful()){
+                Log.i("CreateUser", "Sucesso ao cadastrar usuario!");
+            }else{
+                Log.i("CreateUser", "Erro ao cadastrar usuario!");
+            }
+        }
+    });
+```
+
+- Verificacão de usuário logado
+
+```java
+/*Verificao de usaurio logado*/
+if (authUsuarios.getCurrentUser() != null) {
+	Log.i("CreateUser", "Usuario Logado!");
+}else{
+	Log.i("CreateUser", "Usuario não logado!");
+}
+```
+
+## Login e Logout de usuário
+
+- Deslogar usuário
+
+```java
+/*Deslogar usuario*/
+authUsuarios.signOut();
+```
+
+- Logar usuário
+
+```java
+/*Logar usuario*/
+authUsuarios.signInWithEmailAndPassword(
+"filipe@gmail.com",
+"filipe12345")
+.addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+    @Override
+    public void onComplete(@NonNull Task<AuthResult> task) {
+    	if (task.isSuccessful()){
+    		Log.i("SignIn", "Sucesso ao logar usuario!");
+    	}else{
+    		Log.i("SignIn", "Erro ao logar usuario!");
+    	}
+	}
+});
+```
+
+## Gerando identificador único
+
+- .push() gera de forma automatica um identificador no firebase
+
+```java
+DatabaseReference NoUsuarios = referencia.child("usuarios");
+
+Usuario usuario = new Usuario();
+usuario.setNome("Isabela");
+usuario.setSobrenome("Nascimento");
+usuario.setIdade(22);
+
+NoUsuarios.push().setValue(usuario); // gerador automatico
+```
+
+## Aplicacão de filtros
+
+### Fitrando usuários por meio do id
+
+```java
+DatabaseReference usuarioPesquisa = NoUsuarios.child("-NJvT7wF6MLxeh9E3RiX");
+        usuarioPesquisa.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Log.i("Dados Usuarios", snapshot.getValue().toString());
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+```
+
+- Posso retornar a informacão por meio de sua *class*. Dessa maneira consigo filtrar ainda mais as informacões que quero exibir
+
+```java
+//Selecionando usuario pelo deu id
+        DatabaseReference usuarioPesquisa = NoUsuarios.child("-NJvT7wF6MLxeh9E3RiX");
+        usuarioPesquisa.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                //Recuperando pela class
+                Usuario dadosUsuario = snapshot.getValue(Usuario.class);
+                Log.i("Dados Usuarios", "nome: "+dadosUsuario.getNome()+" idade : "+dadosUsuario.getIdade());
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+```
+
+### Pesquisa por meio de query
+
+```java
+Query usuarioPesquisa = NoUsuarios.orderByChild("nome").equalTo("Filipe");
+```
+
+### Filtrando pelos cinco primeiros e cinco últimos
+
+```java
+Query usuarioPesquisa = NoUsuarios.orderByKey().limitToFirst(5); //primeiros
+```
+
+```java
+Query usuarioPesquisa = NoUsuarios.orderByKey().limitToLast(5); // ultimos
+```
+
+### Filtrando pelo Maior ou igual
+
+```java
+// retorna os valores (>= 30)
+Query usuarioPesquisa = NoUsuarios.orderByChild(idade).startAt(30); 
+```
+
+### Filtrando pelo Menor ou igual
+
+```java
+Query usuarioPesquisa = NoUsuarios.orderByChild(idade).endtAt(30); 
+```
+
+### Filtrando por dois valores
+
+```java
+Query usuarioPesquisa = NoUsuarios.orderByChild(idade).startAt(18).endAt(30);
+```
+
+- Esse filtro também funciona para nomes. É necessário adicionar o código unicode *\uf8ff*
+
+```java
+Query usuarioPesquisa = NoUsuarios.orderByChild("nome").startAt("j").endAt("j"+"\uf8ff");
+```
+
+### Adicionando um índice ao campo de buscas
+
+- O uso de índices é recomendado para campos que são mais pesquisados, como por exemplo nome e idade dos usuários.
+- Para adicionar um índice acessar o firebase > database > regras.
+- Adicionar o seguinte comando as regras
+
+```java
+"usuarios":{
+        ".indexOn": ["nome", "idade"]
+      }
+```
+
+## Firebase Storage
+
+- Ir o firebase e clicar na opcão *storage* e em seguida habilitar a versão para teste.
+- Adicionar o *firebase storage* para habilitar o upload de arquivos
+
+```java
+dependencies {
+    // Import the BoM for the Firebase platform
+    implementation platform('com.google.firebase:firebase-bom:31.1.1')
+
+    // Add the dependency for the Cloud Storage library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation 'com.google.firebase:firebase-storage'
+}
+```
+
+- Adicionar duas imagens ao projeto e um botão para entender o funcionamento
+- Fazer referencia ao id
+
+```java
+private Button buttonUpload;
+private ImageView imageFoto;
+```
+
+- Configurar para imagem ser salva em memória e em seguida recuperar  a imagem a ser carregada
+
+```java
+// Configura para imagem ser salva em memoria
+imageFoto.setDrawingCacheEnabled(true);
+imageFoto.buildDrawingCache();
+
+// Recupera o bitmap da imagem
+Bitmap bitmap = imageFoto.getDrawingCache();
+
+//Comprimir bitmap para um formato png/jpeg
+ByteArrayOutputStream baos = new ByteArrayOutputStream();
+bitmap.compress(Bitmap.CompressFormat.JPEG, 75, baos);
+
+//Converte o baos para pixel brutos em uma matriz de bytes
+byte[] dadosImagem = baos.toByteArray();
+```
+
+- Define nós para o storage
+
+```
+FirebaseStorage storage = FirebaseStorage.getInstance();
+```
+
+- Criar uma referencia para a imagem
+
+```java
+// Create a child reference
+// imagesRef now points to "images"
+StorageReference storageReference = storage.getReference();
+StorageReference imagesRef = storageReference.child("images");
+StorageReference image = imagesRef.child("celular.jpeg");
+```
+
+- o nome da imagem pode ser definida por meio de um gerador de string, dessa forma não teremos conflitos de nomes no servidor.
+
+```java
+// Gerando uma string ramdomica para o nome da imagem
+String nomeArquivo = UUID.randomUUID().toString();
+StorageReference storageReference = storage.getReference();
+StorageReference imagesRef = storageReference.child("images");
+StorageReference image = imagesRef.child(nomeArquivo+".jpeg");
+```
+
+### Upload de imagem
+
+- Criar um objeto que será responsável pelo upload da imagem
+
+```java
+//Retorna o objeto que irá controlar o upload
+UploadTask uploadTask = image.putBytes(dadosImagem);
+
+//Validar caso houver falhas
+uploadTask.addOnFailureListener(MainActivity.this, new OnFailureListener() {
+    @Override
+    public void onFailure(@NonNull Exception e) {
+    	Toast.makeText(MainActivity.this,
+    	"Upload da imagem falhou: "+e.getMessage(),
+    	Toast.LENGTH_LONG).show();
+    }
+})//Valida caso houver sucesso
+    .addOnSuccessListener(MainActivity.this, new OnSuccessListener<UploadTask.TaskSnapshot>() {
+    @Override
+    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+    	image.getDownloadUrl().addOnCompleteListener(new OnCompleteListener<Uri>() {
+    @Override
+    public void onComplete(@NonNull Task<Uri> task) {
+   		Uri url = task.getResult();
+    	Toast.makeText(MainActivity.this,
+    	"Upload da imagem concluída com sucesso "+url.toString(),
+    	Toast.LENGTH_LONG).show();
+    		}
+    	});
+	}
+});
+
+
+}
+});
+```
+
+### Deletando imagem
+
+```java
+StorageReference image = imagesRef.child("celular.jpeg");
+
+                image.delete().addOnFailureListener(MainActivity.this, new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Toast.makeText(
+                                MainActivity.this,
+                                "Erro ao deletar",
+                                Toast.LENGTH_LONG
+                        ).show();
+                    }
+                }).addOnSuccessListener(MainActivity.this, new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void unused) {
+                                Toast.makeText(
+                                        MainActivity.this,
+                                        "Sucesso ao deletar",
+                                        Toast.LENGTH_LONG
+                                ).show();
+                            }
+                        });
+```
+
